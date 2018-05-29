@@ -1,4 +1,4 @@
-# mem
+# gokv/mem
 [![GoDoc](https://godoc.org/github.com/gokv/mem?status.svg)](https://godoc.org/github.com/gokv/mem)
 [![Build Status](https://travis-ci.org/gokv/mem.svg?branch=master)](https://travis-ci.org/gokv/mem)
 

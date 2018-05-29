@@ -53,7 +53,7 @@ func (s *Store) Del(key string) error {
 }
 
 // Get returns the value corresponding the key, and a nil error.
-// If no match is found, returns (nil, nil).
+// If no match is found, returns (false, nil).
 func (s *Store) Get(key string, v encoding.BinaryUnmarshaler) (bool, error) {
 	s.mu.RLock()
 	s.mu.RUnlock()
