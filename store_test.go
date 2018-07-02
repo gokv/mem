@@ -1,6 +1,7 @@
 package mem_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -10,12 +11,12 @@ import (
 
 type String string
 
-func (s *String) UnmarshalBinary(data []byte) error {
+func (s *String) UnmarshalJSON(data []byte) error {
 	*s = String(data)
 	return nil
 }
 
-func (s String) MarshalBinary() (data []byte, err error) {
+func (s String) MarshalJSON() (data []byte, err error) {
 	return []byte(s), nil
 }
 
@@ -26,7 +27,7 @@ func TestStore(t *testing.T) {
 	hasValue := func(key string, want String) checkFunc {
 		return func(s *mem.Store) error {
 			var have String
-			ok, err := s.Get(key, &have)
+			ok, err := s.Get(context.Background(), key, &have)
 			if err != nil {
 				return fmt.Errorf("unexpected error: `%v`", err)
 			}
@@ -42,20 +43,12 @@ func TestStore(t *testing.T) {
 	hasNotKey := func(key string) checkFunc {
 		return func(s *mem.Store) error {
 			var value String
-			ok, err := s.Get(key, &value)
+			ok, err := s.Get(context.Background(), key, &value)
 			if err != nil {
 				return fmt.Errorf("unexpected error: `%v`", err)
 			}
 			if ok {
 				return fmt.Errorf("key %q unexpectedly found: %q", key, value)
-			}
-			return nil
-		}
-	}
-	hasLength := func(want int) checkFunc {
-		return func(s *mem.Store) error {
-			if have := s.Length(); have != want {
-				return fmt.Errorf("expected length %d, found %d", want, have)
 			}
 			return nil
 		}
@@ -66,21 +59,21 @@ func TestStore(t *testing.T) {
 
 	withValue := func(key string, v String) storeBuilder {
 		return func(s *mem.Store) {
-			if err := s.Set(key, v); err != nil {
+			if err := s.Set(context.Background(), key, v); err != nil {
 				panic(err)
 			}
 		}
 	}
 	withValueTimeout := func(key string, v String, timeout time.Duration) storeBuilder {
 		return func(s *mem.Store) {
-			if err := s.SetWithTimeout(key, v, timeout); err != nil {
+			if err := s.SetWithTimeout(context.Background(), key, v, timeout); err != nil {
 				panic(err)
 			}
 		}
 	}
 	deleteKey := func(key string) storeBuilder {
 		return func(s *mem.Store) {
-			s.Del(key)
+			s.Delete(context.Background(), key)
 		}
 	}
 
@@ -102,7 +95,6 @@ func TestStore(t *testing.T) {
 				withValue("mykey", String("somevalue")),
 			),
 			checks(
-				hasLength(1),
 				hasValue("mykey", String("somevalue")),
 			),
 		},
@@ -110,7 +102,6 @@ func TestStore(t *testing.T) {
 			"miss",
 			buildStore(),
 			checks(
-				hasLength(0),
 				hasNotKey("unset key"),
 			),
 		},
@@ -121,7 +112,6 @@ func TestStore(t *testing.T) {
 				withValue("key2", String("somevalue")),
 			),
 			checks(
-				hasLength(2),
 				hasValue("key1", String(")=IM()=UNY(Hf09riècg,àrgò")),
 				hasValue("key2", String("somevalue")),
 			),
@@ -132,7 +122,6 @@ func TestStore(t *testing.T) {
 				withValueTimeout("volatile key", String("somevalue"), time.Second),
 			),
 			checks(
-				hasLength(1),
 				hasValue("volatile key", String("somevalue")),
 			),
 		},
