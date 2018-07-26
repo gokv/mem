@@ -6,4 +6,8 @@ A naïve (read: incomplete) in-memory key-value store implementing `github.com/g
 
 The focus is on readability and simplicity, rather than on efficiency.
 
-This package is not ready for production use.
+## This package is not ready for production use.
+
+### Known issues:
+
+* The expired values are never garbage-collected
