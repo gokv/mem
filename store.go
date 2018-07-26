@@ -31,7 +31,7 @@ type Store struct {
 	m  map[interface{}]entry
 }
 
-// New initialises the map inderlying Store.
+// New initialises the map underlying Store.
 func New() *Store {
 	return &Store{
 		m: make(map[interface{}]entry),
@@ -48,7 +48,7 @@ func (s *Store) Get(ctx context.Context, key interface{}, v json.Unmarshaler) (b
 	}
 
 	s.mu.RLock()
-	s.mu.RUnlock()
+	defer s.mu.RUnlock()
 
 	e, ok := s.m[key]
 	if !ok || !e.validAt(time.Now()) {
@@ -67,7 +67,7 @@ func (s *Store) GetAll(ctx context.Context, key interface{}, c store.Collection)
 	}
 
 	s.mu.RLock()
-	s.mu.RUnlock()
+	defer s.mu.RUnlock()
 
 	now := time.Now()
 
