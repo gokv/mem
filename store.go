@@ -49,7 +49,7 @@ func New() *Store {
 
 // Get returns the value corresponding the key, and a nil error.
 // If no match is found, returns (false, nil).
-func (s *Store) Get(ctx context.Context, key interface{}, v json.Unmarshaler) (bool, error) {
+func (s *Store) Get(ctx context.Context, k string, v json.Unmarshaler) (bool, error) {
 	select {
 	case <-ctx.Done():
 		return false, ctx.Err()
@@ -59,7 +59,7 @@ func (s *Store) Get(ctx context.Context, key interface{}, v json.Unmarshaler) (b
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	e, ok := s.m[key]
+	e, ok := s.m[k]
 	if !ok || !e.validAt(time.Now()) {
 		return false, nil
 	}
@@ -68,7 +68,7 @@ func (s *Store) Get(ctx context.Context, key interface{}, v json.Unmarshaler) (b
 }
 
 // GetAll returns all values. Error is non-nil if the context is Done.
-func (s *Store) GetAll(ctx context.Context, key interface{}, c store.Collection) error {
+func (s *Store) GetAll(ctx context.Context, k string, c store.Collection) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -93,7 +93,7 @@ func (s *Store) GetAll(ctx context.Context, key interface{}, c store.Collection)
 
 // Add assigns the given value to the given key if it doesn't exist already.
 // Err is non-nil if key was already present, or in case of failure.
-func (s *Store) Add(ctx context.Context, key interface{}, v json.Marshaler) error {
+func (s *Store) Add(ctx context.Context, k string, v json.Marshaler) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -113,17 +113,17 @@ func (s *Store) Add(ctx context.Context, key interface{}, v json.Marshaler) erro
 	default:
 	}
 
-	if _, ok := s.m[key]; ok {
+	if _, ok := s.m[k]; ok {
 		return store.ErrKeyExists
 	}
 
-	s.m[key] = entry{data: b}
+	s.m[k] = entry{data: b}
 	return nil
 }
 
 // Set assigns the given value to the given key, possibly overwriting.
 // The returned error is not nil if the context is Done.
-func (s *Store) Set(ctx context.Context, key interface{}, v json.Marshaler) error {
+func (s *Store) Set(ctx context.Context, k string, v json.Marshaler) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -143,7 +143,7 @@ func (s *Store) Set(ctx context.Context, key interface{}, v json.Marshaler) erro
 	default:
 	}
 
-	s.m[key] = entry{data: b}
+	s.m[k] = entry{data: b}
 	return nil
 }
 
@@ -151,14 +151,14 @@ func (s *Store) Set(ctx context.Context, key interface{}, v json.Marshaler) erro
 // overwriting.
 // The assigned key will clear after timeout. The lifespan starts when this
 // function is called.
-func (s *Store) SetWithTimeout(ctx context.Context, key interface{}, v json.Marshaler, timeout time.Duration) error {
-	return s.SetWithDeadline(ctx, key, v, time.Now().Add(timeout))
+func (s *Store) SetWithTimeout(ctx context.Context, k string, v json.Marshaler, timeout time.Duration) error {
+	return s.SetWithDeadline(ctx, k, v, time.Now().Add(timeout))
 }
 
 // SetWithDeadline assigns the given value to the given key, possibly
 // overwriting.
 // The assigned key will clear after deadline.
-func (s *Store) SetWithDeadline(ctx context.Context, key interface{}, v json.Marshaler, deadline time.Time) error {
+func (s *Store) SetWithDeadline(ctx context.Context, k string, v json.Marshaler, deadline time.Time) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -178,13 +178,13 @@ func (s *Store) SetWithDeadline(ctx context.Context, key interface{}, v json.Mar
 	default:
 	}
 
-	s.m[key] = entry{data: b, validTo: deadline.UnixNano()}
+	s.m[k] = entry{data: b, validTo: deadline.UnixNano()}
 	return nil
 }
 
 // Delete removes the corresponding entry if present.
 // Returns a non-nil error if the key is not known or if the context is Done.
-func (s *Store) Delete(ctx context.Context, key interface{}) error {
+func (s *Store) Delete(ctx context.Context, k string) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -199,11 +199,11 @@ func (s *Store) Delete(ctx context.Context, key interface{}) error {
 	default:
 	}
 
-	if _, ok := s.m[key]; !ok {
+	if _, ok := s.m[k]; !ok {
 		return store.ErrNoRows
 	}
 
-	delete(s.m, key)
+	delete(s.m, k)
 	return nil
 }
 
