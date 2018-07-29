@@ -16,6 +16,7 @@ const (
 	cleanupTimeout  = time.Millisecond
 )
 
+// ErrKeyExists is returned when the Add method generates a non-unique ID.
 var ErrKeyExists = errors.New("the key already exists")
 
 type entry struct {
