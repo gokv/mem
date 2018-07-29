@@ -214,6 +214,16 @@ func (s *Store) Delete(ctx context.Context, k string) error {
 	return nil
 }
 
+// Ping always returns nil if the context is not Done.
+func (s *Store) Ping(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		return nil
+	}
+}
+
 // Close releases the resources associated with the Store.
 func (s *Store) Close() error {
 	s.close()
