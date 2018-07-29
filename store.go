@@ -9,6 +9,11 @@ import (
 	"github.com/gokv/store"
 )
 
+const (
+	cleanupInterval = time.Second
+	cleanupTimeout  = time.Millisecond
+)
+
 type entry struct {
 	data    []byte
 	validTo int64
@@ -29,13 +34,17 @@ func (e *entry) validAt(t time.Time) bool {
 type Store struct {
 	mu sync.RWMutex
 	m  map[interface{}]entry
+
+	close func()
 }
 
 // New initialises the map underlying Store.
 func New() *Store {
-	return &Store{
+	s := &Store{
 		m: make(map[interface{}]entry),
 	}
+	s.close = start(s.Cleanup, cleanupTimeout, cleanupInterval)
+	return s
 }
 
 // Get returns the value corresponding the key, and a nil error.
@@ -195,5 +204,11 @@ func (s *Store) Delete(ctx context.Context, key interface{}) error {
 	}
 
 	delete(s.m, key)
+	return nil
+}
+
+// Close releases the resources associated with the Store.
+func (s *Store) Close() error {
+	s.close()
 	return nil
 }

@@ -150,6 +150,7 @@ func TestStore(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			s := mem.New()
+			defer s.Close()
 
 			for _, build := range tc.storeBuilders {
 				build(s)
