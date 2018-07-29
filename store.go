@@ -38,7 +38,7 @@ func (e *entry) validAt(t time.Time) bool {
 // Store is safe for concurrent use.
 type Store struct {
 	mu sync.RWMutex
-	m  map[interface{}]entry
+	m  map[string]entry
 
 	close func()
 }
@@ -46,7 +46,7 @@ type Store struct {
 // New initialises the map underlying Store.
 func New() *Store {
 	s := &Store{
-		m: make(map[interface{}]entry),
+		m: make(map[string]entry),
 	}
 	s.close = start(s.Cleanup, cleanupTimeout, cleanupInterval)
 	return s
