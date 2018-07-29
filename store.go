@@ -3,16 +3,20 @@ package mem
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"sync"
 	"time"
 
 	"github.com/gokv/store"
+	"github.com/google/uuid"
 )
 
 const (
 	cleanupInterval = time.Second
 	cleanupTimeout  = time.Millisecond
 )
+
+var ErrKeyExists = errors.New("the key already exists")
 
 type entry struct {
 	data    []byte
@@ -91,34 +95,36 @@ func (s *Store) GetAll(ctx context.Context, k string, c store.Collection) error 
 	return nil
 }
 
-// Add assigns the given value to the given key if it doesn't exist already.
-// Err is non-nil if key was already present, or in case of failure.
-func (s *Store) Add(ctx context.Context, k string, v json.Marshaler) error {
+// Add persists a new object and returns its unique UUIDv4 key.
+// Err is non-nil in case of failure.
+func (s *Store) Add(ctx context.Context, v json.Marshaler) (string, error) {
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return "", ctx.Err()
 	default:
 	}
 
 	b, err := v.MarshalJSON()
 	if err != nil {
-		return err
+		return "", err
 	}
+
+	k := uuid.New().String()
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return "", ctx.Err()
 	default:
 	}
 
 	if _, ok := s.m[k]; ok {
-		return store.ErrKeyExists
+		return "", ErrKeyExists
 	}
 
 	s.m[k] = entry{data: b}
-	return nil
+	return k, nil
 }
 
 // Set assigns the given value to the given key, possibly overwriting.

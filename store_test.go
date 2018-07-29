@@ -164,3 +164,30 @@ func TestStore(t *testing.T) {
 		})
 	}
 }
+
+func TestAdd(t *testing.T) {
+	t.Run("adds a value", func(t *testing.T) {
+		s := mem.New()
+		defer s.Close()
+
+		added := String("some value")
+
+		k, err := s.Add(context.Background(), added)
+		if err != nil {
+			t.Errorf("adding: %v", err)
+		}
+
+		var got String
+		ok, err := s.Get(context.Background(), k, &got)
+		if err != nil {
+			t.Errorf("getting: %v", err)
+		}
+		if !ok {
+			t.Errorf("value expected, not found")
+		}
+
+		if added != got {
+			t.Errorf("expected %q, found %q", added, got)
+		}
+	})
+}
