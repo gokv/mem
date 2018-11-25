@@ -191,27 +191,26 @@ func (s *Store) SetWithDeadline(ctx context.Context, k string, v json.Marshaler,
 
 // Delete removes the corresponding entry if present.
 // Returns a non-nil error if the key is not known or if the context is Done.
-func (s *Store) Delete(ctx context.Context, k string) error {
+func (s *Store) Delete(ctx context.Context, k string) (bool, error) {
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return false, ctx.Err()
 	default:
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return false, ctx.Err()
 	default:
 	}
 
-	if _, ok := s.m[k]; !ok {
-		return store.ErrNoRows
-	}
+	_, ok := s.m[k]
 
 	delete(s.m, k)
-	return nil
+	return ok, nil
 }
 
 // Ping always returns nil if the context is not Done.
