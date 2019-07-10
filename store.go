@@ -73,7 +73,7 @@ func (s *Store) Get(ctx context.Context, k string, v json.Unmarshaler) (bool, er
 }
 
 // GetAll returns all values. Error is non-nil if the context is Done.
-func (s *Store) GetAll(ctx context.Context, k string, c store.Collection) error {
+func (s *Store) GetAll(ctx context.Context, c store.Collection) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
